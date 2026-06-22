@@ -1,0 +1,1 @@
+import{u as a,r as o,j as t,O as u}from"./index-PIccCASS.js";import{u as n}from"./patrol-store-DAsqpmLs.js";function m(){const e=n(r=>r.user),s=a();return o.useEffect(()=>{(!e||e.role!=="petugas")&&s({to:"/"})},[e,s]),e?t.jsx("div",{className:"min-h-screen bg-slate-50",children:t.jsx(u,{})}):null}export{m as component};
