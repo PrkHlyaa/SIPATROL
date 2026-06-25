@@ -47,7 +47,10 @@ function TitikPage() {
   const [qrCp, setQrCp] = useState<Checkpoint | null>(null);
 
   const openCreate = () => {
-    setEditing({ id: "", code: "", name: "", location: "" });
+    const nextUrutan = checkpoints.length
+      ? Math.max(...checkpoints.map((c) => c.urutan)) + 1
+      : 1;
+    setEditing({ id: "", code: "", name: "", location: "", urutan: nextUrutan });
     setIsNew(true);
   };
 
@@ -62,6 +65,7 @@ function TitikPage() {
         code: editing.code,
         name: editing.name,
         location: editing.location,
+        urutan: editing.urutan,
       });
       toast.success("Titik patroli ditambahkan.");
     } else {
@@ -101,6 +105,7 @@ function TitikPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Urutan</TableHead>
                 <TableHead>Kode</TableHead>
                 <TableHead>Nama</TableHead>
                 <TableHead>Lokasi</TableHead>
@@ -108,8 +113,9 @@ function TitikPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {checkpoints.map((cp) => (
+              {[...checkpoints].sort((a, b) => a.urutan - b.urutan).map((cp) => (
                 <TableRow key={cp.id}>
+                  <TableCell className="font-mono">{cp.urutan}</TableCell>
                   <TableCell className="font-mono">{cp.code}</TableCell>
                   <TableCell className="font-medium">{cp.name}</TableCell>
                   <TableCell className="text-slate-600">{cp.location}</TableCell>
@@ -150,6 +156,16 @@ function TitikPage() {
           </DialogHeader>
           {editing && (
             <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Urutan Patroli</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={editing.urutan}
+                  onChange={(e) => setEditing({ ...editing, urutan: Number(e.target.value) || 1 })}
+                />
+                <p className="text-xs text-slate-500">Satpam wajib scan titik sesuai urutan.</p>
+              </div>
               <div className="space-y-1.5">
                 <Label>Kode</Label>
                 <Input

@@ -5,12 +5,16 @@ import {
   useStore,
   store,
 } from "@/lib/store/patrol-store";
-import { getActiveSession } from "@/lib/helpers/time";
-import { validateScan } from "@/lib/helpers/validation";
+import {
+  getActiveSession,
+} from "@/lib/helpers/time";
+import {
+  validateScan,
+} from "@/lib/helpers/validation";
 import type { ScanValidation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Camera, ScanLine, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Camera, ScanLine, AlertTriangle, CheckCircle2, MapPin, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/petugas/scan")({
@@ -27,11 +31,16 @@ function ScannerPage() {
   const [step, setStep] = useState<Step>("scanning");
   const [result, setResult] = useState<ScanValidation | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [captureTime, setCaptureTime] = useState<number | null>(null);
   const [completedLog, setCompletedLog] = useState<{
     timestamp: number;
     checkpointName: string;
     sessionName: string;
     photo: string;
+    latitude?: number;
+    longitude?: number;
   } | null>(null);
   const webcamRef = useRef<Webcam>(null);
 
@@ -39,15 +48,32 @@ function ScannerPage() {
     if (!user) navigate({ to: "/" });
   }, [user, navigate]);
 
+  const requestGeo = () => {
+    setGeoError(null);
+    if (!("geolocation" in navigator)) {
+      setGeoError("Geolocation tidak didukung browser ini.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => setGeoError(`Gagal mendapatkan lokasi: ${err.message}.`),
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  };
+
   const performScan = (cpId: string) => {
     const r = validateScan(cpId, user?.name ?? "");
     setResult(r);
     if (r.ok) {
       setStep("capture");
+      setGeo(null);
+      setCaptureTime(null);
+      setPhoto(null);
+      requestGeo();
       toast.success(`QR valid: ${r.checkpoint.name}`);
     } else {
       setStep("denied");
-      toast.error(r.message);
+      toast.error(r.message, { style: { background: "#dc2626", color: "white" } });
       if (user) {
         const cp = checkpoints.find((c) => c.id === cpId);
         if (cp) {
@@ -71,8 +97,9 @@ function ScannerPage() {
     const active = getActiveSession(sessions);
     let targetId = checkpoints[0]?.id;
     if (active && user) {
-      const remaining = checkpoints.find((cp) => validateScan(cp.id, user.name).ok)?.id;
-      targetId = remaining ?? checkpoints[0]?.id;
+      const sorted = [...checkpoints].sort((a, b) => a.urutan - b.urutan);
+      const remaining = sorted.find((cp) => validateScan(cp.id, user.name).ok)?.id;
+      targetId = remaining ?? sorted[0]?.id;
     }
     if (!targetId) return;
     performScan(targetId);
@@ -86,7 +113,12 @@ function ScannerPage() {
       return;
     }
     setPhoto(img);
-    const now = Date.now();
+    setCaptureTime(Date.now());
+  };
+
+  const submitReport = () => {
+    if (!result?.ok || !photo) return;
+    const now = captureTime ?? Date.now();
     const ts = new Date();
     const [sh, sm] = result.session.startTime.split(":").map(Number);
     const [eh, em] = result.session.endTime.split(":").map(Number);
@@ -104,13 +136,18 @@ function ScannerPage() {
       officerName: user?.name ?? "Petugas",
       timestamp: now,
       status,
-      photo: img,
+      photo,
+      latitude: geo?.lat,
+      longitude: geo?.lng,
+      sequenceNumber: result.checkpoint.urutan,
     });
     setCompletedLog({
       timestamp: now,
       checkpointName: result.checkpoint.name,
       sessionName: result.session.name,
-      photo: img,
+      photo,
+      latitude: geo?.lat,
+      longitude: geo?.lng,
     });
     setStep("done");
     toast.success("Check-in berhasil dicatat.");
@@ -150,7 +187,7 @@ function ScannerPage() {
           <div>
             <p className="text-xs text-slate-500 mb-2">Atau pilih titik untuk simulasi:</p>
             <div className="grid grid-cols-2 gap-2">
-              {checkpoints.map((cp) => (
+              {[...checkpoints].sort((a, b) => a.urutan - b.urutan).map((cp) => (
                 <Button
                   key={cp.id}
                   variant="outline"
@@ -192,26 +229,91 @@ function ScannerPage() {
       {step === "capture" && result?.ok && (
         <>
           <div className="aspect-square bg-slate-900 rounded-2xl relative overflow-hidden">
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              videoConstraints={{ facingMode: "environment" }}
-              className="w-full h-full object-cover"
-            />
+            {photo ? (
+              <img src={photo} alt="Bukti" className="w-full h-full object-cover" />
+            ) : (
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{ facingMode: "environment" }}
+                className="w-full h-full object-cover"
+              />
+            )}
             <div className="absolute top-0 inset-x-0 bg-gradient-to-b from-black/70 to-transparent p-3">
               <p className="text-xs text-blue-300 uppercase tracking-wide">{result.session.name}</p>
               <p className="text-white font-semibold">{result.checkpoint.name}</p>
-              <p className="text-xs text-white/70 font-mono">{result.checkpoint.code}</p>
+              <p className="text-xs text-white/70 font-mono">
+                {result.checkpoint.code} · Urutan {result.checkpoint.urutan}
+              </p>
             </div>
           </div>
-          <Button
-            onClick={takePhoto}
-            size="lg"
-            className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Camera className="w-5 h-5 mr-2" /> Ambil Foto Bukti
-          </Button>
+
+          <Card className="border-blue-100">
+            <CardContent className="p-4 space-y-2 text-sm">
+              <div className="flex items-start gap-2 text-slate-700">
+                <MapPin className="w-4 h-4 mt-0.5 text-blue-600" />
+                <div className="flex-1">
+                  <p className="font-medium">Koordinat (Geotag)</p>
+                  {geo ? (
+                    <p className="font-mono text-xs text-slate-600">
+                      {geo.lat.toFixed(6)}, {geo.lng.toFixed(6)}
+                    </p>
+                  ) : geoError ? (
+                    <p className="text-xs text-red-600">{geoError}</p>
+                  ) : (
+                    <p className="text-xs text-slate-500">Mendeteksi lokasi…</p>
+                  )}
+                  {geoError && (
+                    <Button size="sm" variant="outline" className="mt-2" onClick={requestGeo}>
+                      Coba lagi
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-start gap-2 text-slate-700">
+                <Clock className="w-4 h-4 mt-0.5 text-blue-600" />
+                <div>
+                  <p className="font-medium">Timestamp</p>
+                  <p className="font-mono text-xs text-slate-600">
+                    {new Date(captureTime ?? Date.now()).toLocaleString("id-ID")}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {!photo ? (
+            <Button
+              onClick={takePhoto}
+              size="lg"
+              className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Camera className="w-5 h-5 mr-2" /> Ambil Foto (Live Camera)
+            </Button>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPhoto(null);
+                  setCaptureTime(null);
+                }}
+              >
+                Foto Ulang
+              </Button>
+              <Button
+                onClick={submitReport}
+                disabled={!geo}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Submit Laporan
+              </Button>
+            </div>
+          )}
+          <p className="text-xs text-center text-slate-500">
+            Hanya kamera langsung yang diizinkan. Upload dari galeri dinonaktifkan.
+          </p>
         </>
       )}
 
@@ -229,6 +331,13 @@ function ScannerPage() {
               <p className="text-xs text-slate-500 mt-1">
                 {new Date(completedLog.timestamp).toLocaleString("id-ID")}
               </p>
+              {completedLog.latitude !== undefined && (
+                <p className="text-xs text-slate-500 font-mono mt-1">
+                  <MapPin className="w-3 h-3 inline mr-1" />
+                  {completedLog.latitude.toFixed(6)},{" "}
+                  {completedLog.longitude?.toFixed(6)}
+                </p>
+              )}
             </div>
             {photo && (
               <img

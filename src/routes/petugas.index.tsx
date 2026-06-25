@@ -14,7 +14,8 @@ import { sessionProgressToday } from "@/lib/helpers/validation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Clock, Users, LogOut, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react";
+import { QrCode, Clock, Users, LogOut, CheckCircle2, AlertCircle, ShieldAlert, AlertTriangle } from "lucide-react";
+import { NotificationBell, buildNotifications } from "@/components/NotificationBell";
 
 export const Route = createFileRoute("/petugas/")({
   component: PetugasDashboard,
@@ -35,6 +36,9 @@ function PetugasDashboard() {
   const active = getActiveSession(sessions, now);
   const next = getNextSession(sessions, now);
   const isAssigned = !!active && !!user && active.officerNames.includes(user.name);
+  const lateNotifs = buildNotifications(sessions, now).filter(
+    (n) => n.tone === "warning" || n.tone === "danger",
+  );
 
   const dateStr = now.toLocaleDateString("id-ID", {
     weekday: "long",
@@ -56,10 +60,29 @@ function PetugasDashboard() {
           <h1 className="text-xl font-bold text-slate-900">{user?.name}</h1>
           <p className="text-sm text-slate-600">{dateStr}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={logout} className="text-slate-600">
-          <LogOut className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <Button variant="ghost" size="icon" onClick={logout} className="text-slate-600">
+            <LogOut className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
+
+      {lateNotifs.length > 0 && (
+        <Card className="bg-red-50 border-red-300">
+          <CardContent className="p-4 space-y-1">
+            <div className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="w-5 h-5" />
+              <p className="font-semibold">Peringatan Keterlambatan</p>
+            </div>
+            {lateNotifs.map((n) => (
+              <p key={n.id} className="text-sm text-red-700/90">
+                · {n.title} — {n.message}
+              </p>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {active && isAssigned ? (
         <ActiveSessionCard sessionId={active.id} now={now} />

@@ -10,6 +10,7 @@ import {
   nowMinutes,
 } from "@/lib/helpers/time";
 import { sessionProgressToday } from "@/lib/helpers/validation";
+import { PatrolSessionReport } from "@/routes/warga";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, CheckCircle2, AlertTriangle } from "lucide-react";
@@ -23,7 +24,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-export const Route = createFileRoute("/admin/")({
+export const Route = createFileRoute("/admin/")(  {
   component: AdminDashboard,
 });
 
@@ -80,6 +81,8 @@ function AdminDashboard() {
           sub={missed.map((m) => m.name).join(", ") || "Belum ada"}
         />
       </div>
+
+      <PatrolSessionReport />
 
       <Card>
         <CardHeader>

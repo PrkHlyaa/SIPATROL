@@ -73,7 +73,7 @@ function RiwayatPage() {
   });
 
   const exportCsv = () => {
-    const headers = ["Tanggal", "Sesi", "Petugas", "Kode", "Checkpoint", "Waktu", "Status", "Catatan"];
+    const headers = ["Tanggal", "Sesi", "Petugas", "Kode", "Checkpoint", "Waktu", "Lokasi", "Status", "Catatan"];
     const rows = filtered.map((l) => {
       const d = new Date(l.timestamp);
       return [
@@ -83,6 +83,9 @@ function RiwayatPage() {
         l.checkpointCode,
         l.checkpointName,
         d.toLocaleTimeString("id-ID"),
+        l.latitude !== undefined && l.longitude !== undefined
+          ? `${l.latitude.toFixed(5)}, ${l.longitude.toFixed(5)}`
+          : "",
         l.status,
         (l.note ?? "").replace(/"/g, '""'),
       ];
@@ -172,6 +175,7 @@ function RiwayatPage() {
                 <TableHead>Petugas</TableHead>
                 <TableHead>Checkpoint</TableHead>
                 <TableHead>Waktu Scan</TableHead>
+                <TableHead>Lokasi (Geotag)</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Foto</TableHead>
               </TableRow>
@@ -189,6 +193,15 @@ function RiwayatPage() {
                       <div className="text-xs text-slate-500 font-mono">{l.checkpointCode}</div>
                     </TableCell>
                     <TableCell>{d.toLocaleTimeString("id-ID")}</TableCell>
+                    <TableCell>
+                      {l.latitude !== undefined && l.longitude !== undefined ? (
+                        <span className="font-mono text-xs text-slate-600">
+                          {l.latitude.toFixed(5)}, {l.longitude.toFixed(5)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={l.status} />
                     </TableCell>
@@ -209,7 +222,7 @@ function RiwayatPage() {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-slate-500 py-8">
+                  <TableCell colSpan={8} className="text-center text-slate-500 py-8">
                     Tidak ada data sesuai filter.
                   </TableCell>
                 </TableRow>

@@ -16,12 +16,14 @@ import {
   LogOut,
   Shield,
   Menu,
+  Users as UsersIcon,
 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Sistem Patroli" }] }),
@@ -33,6 +35,7 @@ const navItems = [
   { to: "/admin/peta", label: "Peta Layout Live", icon: Map },
   { to: "/admin/titik", label: "Titik Patroli", icon: QrCode },
   { to: "/admin/sesi", label: "Sesi Patroli", icon: CalendarClock },
+  { to: "/admin/users", label: "Manajemen Pengguna", icon: UsersIcon },
   { to: "/admin/riwayat", label: "Riwayat & Laporan", icon: ClipboardList },
 ];
 
@@ -123,7 +126,11 @@ function AdminLayout() {
           </div>
           <p className="text-sm font-semibold truncate">Patroli Admin</p>
         </div>
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <div className="flex items-center gap-1">
+          <div className="[&_button]:text-white [&_button:hover]:bg-slate-800">
+            <NotificationBell />
+          </div>
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <button
               aria-label="Buka menu"
@@ -138,10 +145,14 @@ function AdminLayout() {
           >
             <SidebarInner onNavigate={() => setMobileOpen(false)} />
           </SheetContent>
-        </Sheet>
+          </Sheet>
+        </div>
       </header>
 
       <main className="md:ml-64 min-h-screen pt-14 md:pt-0 overflow-x-hidden">
+        <div className="hidden md:flex sticky top-0 z-20 bg-white border-b items-center justify-end px-6 h-14">
+          <NotificationBell />
+        </div>
         <div className="p-4 md:p-8">
           <Outlet />
         </div>

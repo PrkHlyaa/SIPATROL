@@ -41,6 +41,28 @@ export function validateScan(checkpointId: string, officerName: string): ScanVal
       message: "Anda sudah menyelesaikan check-in untuk titik ini di sesi ini.",
     };
   }
+  // Cek urutan checkpoint - semua titik dengan urutan < checkpoint.urutan harus sudah di-scan
+  // oleh officer ini pada sesi ini.
+  const sortedCps = [...s.checkpoints].sort((a, b) => a.urutan - b.urutan);
+  const prevCps = sortedCps.filter((c) => c.urutan < checkpoint.urutan);
+  const missing = prevCps.find(
+    (prev) =>
+      !s.logs.some(
+        (l) =>
+          l.sessionId === active.id &&
+          l.checkpointId === prev.id &&
+          l.officerName === officerName &&
+          l.status !== "Ditolak" &&
+          isSameDay(l.timestamp, today),
+      ),
+  );
+  if (missing) {
+    return {
+      ok: false,
+      code: "WRONG_ORDER",
+      message: `Urutan salah! Harap scan Titik ${missing.name} terlebih dahulu.`,
+    };
+  }
   return { ok: true, session: active, checkpoint };
 }
 
@@ -58,4 +80,77 @@ export function sessionProgressToday(session: PatrolSession): { done: number; to
     ),
   ).length;
   return { done, total };
+}
+
+/** Progress for a specific date (not just today) */
+export function sessionProgressForDate(
+  session: PatrolSession,
+  date: Date,
+): { done: number; total: number } {
+  const s = store.get();
+  const dateMs = date.getTime();
+  const total = s.checkpoints.length;
+  const done = s.checkpoints.filter((cp) =>
+    s.logs.some(
+      (l) =>
+        l.sessionId === session.id &&
+        l.checkpointId === cp.id &&
+        l.status !== "Ditolak" &&
+        isSameDay(l.timestamp, dateMs),
+    ),
+  ).length;
+  return { done, total };
+}
+
+// Progress per officer in a given session today
+export function officerProgressToday(
+  session: PatrolSession,
+  officerName: string,
+): { done: number; total: number; doneCps: Checkpoint[] } {
+  const s = store.get();
+  const today = Date.now();
+  const total = s.checkpoints.length;
+  const doneCps = s.checkpoints.filter((cp) =>
+    s.logs.some(
+      (l) =>
+        l.sessionId === session.id &&
+        l.checkpointId === cp.id &&
+        l.officerName === officerName &&
+        l.status !== "Ditolak" &&
+        isSameDay(l.timestamp, today),
+    ),
+  );
+  return { done: doneCps.length, total, doneCps };
+}
+
+/** Progress per officer in a given session for a specific date */
+export function officerProgressForDate(
+  session: PatrolSession,
+  officerName: string,
+  date: Date,
+): { done: number; total: number; doneCps: Checkpoint[]; lateCps: Checkpoint[] } {
+  const s = store.get();
+  const dateMs = date.getTime();
+  const total = s.checkpoints.length;
+  const doneCps = s.checkpoints.filter((cp) =>
+    s.logs.some(
+      (l) =>
+        l.sessionId === session.id &&
+        l.checkpointId === cp.id &&
+        l.officerName === officerName &&
+        l.status !== "Ditolak" &&
+        isSameDay(l.timestamp, dateMs),
+    ),
+  );
+  const lateCps = s.checkpoints.filter((cp) =>
+    s.logs.some(
+      (l) =>
+        l.sessionId === session.id &&
+        l.checkpointId === cp.id &&
+        l.officerName === officerName &&
+        l.status === "Terlambat" &&
+        isSameDay(l.timestamp, dateMs),
+    ),
+  );
+  return { done: doneCps.length, total, doneCps, lateCps };
 }

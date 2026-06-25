@@ -9,14 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WargaRouteImport } from './routes/warga'
+import { Route as PetugasRouteImport } from './routes/petugas'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PetugasIndexRouteImport } from './routes/petugas.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PetugasScanRouteImport } from './routes/petugas.scan'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTitikRouteImport } from './routes/admin.titik'
 import { Route as AdminSesiRouteImport } from './routes/admin.sesi'
 import { Route as AdminRiwayatRouteImport } from './routes/admin.riwayat'
 import { Route as AdminPetaRouteImport } from './routes/admin.peta'
 
+const WargaRoute = WargaRouteImport.update({
+  id: '/warga',
+  path: '/warga',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PetugasRoute = PetugasRouteImport.update({
+  id: '/petugas',
+  path: '/petugas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -27,9 +42,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PetugasIndexRoute = PetugasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PetugasRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PetugasScanRoute = PetugasScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => PetugasRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminTitikRoute = AdminTitikRouteImport.update({
@@ -56,66 +86,110 @@ const AdminPetaRoute = AdminPetaRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/petugas': typeof PetugasRouteWithChildren
+  '/warga': typeof WargaRoute
   '/admin/peta': typeof AdminPetaRoute
   '/admin/riwayat': typeof AdminRiwayatRoute
   '/admin/sesi': typeof AdminSesiRoute
   '/admin/titik': typeof AdminTitikRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/petugas/scan': typeof PetugasScanRoute
   '/admin/': typeof AdminIndexRoute
+  '/petugas/': typeof PetugasIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/warga': typeof WargaRoute
   '/admin/peta': typeof AdminPetaRoute
   '/admin/riwayat': typeof AdminRiwayatRoute
   '/admin/sesi': typeof AdminSesiRoute
   '/admin/titik': typeof AdminTitikRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/petugas/scan': typeof PetugasScanRoute
   '/admin': typeof AdminIndexRoute
+  '/petugas': typeof PetugasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/petugas': typeof PetugasRouteWithChildren
+  '/warga': typeof WargaRoute
   '/admin/peta': typeof AdminPetaRoute
   '/admin/riwayat': typeof AdminRiwayatRoute
   '/admin/sesi': typeof AdminSesiRoute
   '/admin/titik': typeof AdminTitikRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/petugas/scan': typeof PetugasScanRoute
   '/admin/': typeof AdminIndexRoute
+  '/petugas/': typeof PetugasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
+    | '/petugas'
+    | '/warga'
     | '/admin/peta'
     | '/admin/riwayat'
     | '/admin/sesi'
     | '/admin/titik'
+    | '/admin/users'
+    | '/petugas/scan'
     | '/admin/'
+    | '/petugas/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/warga'
     | '/admin/peta'
     | '/admin/riwayat'
     | '/admin/sesi'
     | '/admin/titik'
+    | '/admin/users'
+    | '/petugas/scan'
     | '/admin'
+    | '/petugas'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/petugas'
+    | '/warga'
     | '/admin/peta'
     | '/admin/riwayat'
     | '/admin/sesi'
     | '/admin/titik'
+    | '/admin/users'
+    | '/petugas/scan'
     | '/admin/'
+    | '/petugas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  PetugasRoute: typeof PetugasRouteWithChildren
+  WargaRoute: typeof WargaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/warga': {
+      id: '/warga'
+      path: '/warga'
+      fullPath: '/warga'
+      preLoaderRoute: typeof WargaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/petugas': {
+      id: '/petugas'
+      path: '/petugas'
+      fullPath: '/petugas'
+      preLoaderRoute: typeof PetugasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -130,11 +204,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/petugas/': {
+      id: '/petugas/'
+      path: '/'
+      fullPath: '/petugas/'
+      preLoaderRoute: typeof PetugasIndexRouteImport
+      parentRoute: typeof PetugasRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/petugas/scan': {
+      id: '/petugas/scan'
+      path: '/scan'
+      fullPath: '/petugas/scan'
+      preLoaderRoute: typeof PetugasScanRouteImport
+      parentRoute: typeof PetugasRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/titik': {
@@ -173,6 +268,7 @@ interface AdminRouteChildren {
   AdminRiwayatRoute: typeof AdminRiwayatRoute
   AdminSesiRoute: typeof AdminSesiRoute
   AdminTitikRoute: typeof AdminTitikRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -181,14 +277,30 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRiwayatRoute: AdminRiwayatRoute,
   AdminSesiRoute: AdminSesiRoute,
   AdminTitikRoute: AdminTitikRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface PetugasRouteChildren {
+  PetugasScanRoute: typeof PetugasScanRoute
+  PetugasIndexRoute: typeof PetugasIndexRoute
+}
+
+const PetugasRouteChildren: PetugasRouteChildren = {
+  PetugasScanRoute: PetugasScanRoute,
+  PetugasIndexRoute: PetugasIndexRoute,
+}
+
+const PetugasRouteWithChildren =
+  PetugasRoute._addFileChildren(PetugasRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  PetugasRoute: PetugasRouteWithChildren,
+  WargaRoute: WargaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
